@@ -72,7 +72,7 @@
         const lastVisit = localStorage.getItem("lastVisit");
 
         // Cooldown logic
-        if (lastVisit && now - lastVisit < 5000) {
+        if (lastVisit && now - lastVisit < 30000) {
           return; // Exit the function
         }
 
